@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#071b36">
+<title>ALERTA SÍSMICA PANAMÁ HP8EJU</title>
+<style>
+body{margin:0;background:#071b36;color:white;font-family:Arial;text-align:center}
+header{background:#102c50;padding:22px}
+h1{font-size:24px;color:#ffcc35}
+main{padding:18px}
+.card{background:#15365b;padding:18px;margin:14px auto;border-radius:12px;max-width:500px}
+button{background:#e6a900;color:#071b36;border:0;padding:14px;border-radius:9px;font-weight:bold;font-size:16px}
+#estado{color:#79e8a4}
+.evento{border-bottom:1px solid #456;padding:12px;text-align:left}
+small{color:#b8c9df}
+</style>
+</head>
+<body>
+<header>
+<h1>🚨 ALERTA SÍSMICA PANAMÁ</h1>
+<p>RADIOAFICIONADO HP8EJU</p>
+<p>Monitoreo sísmico de Panamá</p>
+</header>
+<main>
+<div class="card">
+<h2>Estado del monitoreo</h2>
+<p id="estado">Conectando...</p>
+<button onclick="consultar()">ACTUALIZAR SISMOS</button>
+</div>
+<div class="card">
+<h2>Últimos movimientos sísmicos</h2>
+<div id="sismos">Consultando información...</div>
+</div>
+<p><small>Fuente inicial: USGS. Datos sujetos a revisión.</small></p>
+<p><small>Proyecto de apoyo comunitario HP8EJU</small></p>
+</main>
+<script>
+async function consultar(){
+const estado=document.getElementById('estado');
+const lista=document.getElementById('sismos');
+estado.textContent='Consultando información...';
+try{
+const url='https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson';
+const respuesta=await fetch(url);
+if(!respuesta.ok) throw new Error('Error');
+const datos=await respuesta.json();
+const panama=datos.features.filter(e=>{
+const [lon,lat]=e.geometry.coordinates;
+return lat>=7&&lat<=10.5&&lon>=-83.5&&lon<=-77;
+});
+estado.textContent='Sistema conectado. Última consulta: '+new Date().toLocaleTimeString('es-PA');
+lista.innerHTML=panama.length?'':'No hay sismos reportados en el área de Panamá en este listado.';
+panama.sort((a,b)=>b.properties.time-a.properties.time);
+panama.forEach(e=>{
+const p=e.properties;
+lista.innerHTML+=`<div class="evento">
+<strong>Magnitud ${p.mag}</strong><br>
+${p.place}<br>
+${new Date(p.time).toLocaleString('es-PA')}
+</div>`;
+});
+}catch(error){
+estado.textContent='Sin conexión. Intenta nuevamente.';
+lista.textContent='No se pudo consultar el servicio sísmico.';
+}
+}
+consultar();
+setInterval(consultar,60000);
+</script>
+</body>
+</html>
